@@ -17,14 +17,17 @@ from jinja2 import Template
 def yamltree2oakbranch(node):
     if isinstance(node, LiteralNode):
         # literal is not branch, stop recursion
-        return node
+        # make a shallow copy so as to not violate single parent restriction
+        newnode = LiteralNode(node.__name__)
+        newnode.set_data(node.get_data())
+        return newnode
     elif isinstance(node, ContainerNode):
         templates = {}
         for (key, value) in node.__meta__['templates'].items():
             templates[key] = Template(value)
         branch = OakBranch(templates, node.__name__)
         for child in node:
-            # convert all childreb to branches
+            # convert all children to branches
             branch.add_child(yamltree2oakbranch(child))
         return branch
 
@@ -58,7 +61,10 @@ class OakBranch(ContainerNode):
         '''
         data = self.children_as_dictionary()
         data['current_page'] = self
-        page = MetaPage(self.__name__, self.get_metadata('templates')['detail'].render(**data))
+        page = MetaPage('index', 
+            self.get_metadata('templates')['detail'].render(**data),
+            path=self.get_absolute_url(),
+            extension='html')
         return page
 
     def __unicode__(self):

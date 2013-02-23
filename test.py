@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest as ut 
 import oak as module
+import os
 
 from jinja2 import Template
 from yamltree import LiteralNode, parse_yaml
@@ -70,6 +71,14 @@ paper2:
     def test_paper_detail(self):
         branch = module.yamltree2oakbranch(self.node)
         self.assertEqual(branch.paper1.render_detail().get_data(), "Detail. T=First paper. C=First content")
+
+    def test_paper_detail_url(self):
+        branch = module.yamltree2oakbranch(self.node)
+        page = branch.paper1.render_detail()
+        self.assertEqual(os.path.join(page.get_metadata('path'), 
+            page.__name__)+'.'+
+            page.get_metadata('extension'),
+            '/root/paper1/index.html')
 
 if __name__=='__main__':
     ut.main()
