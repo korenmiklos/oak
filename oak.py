@@ -28,8 +28,16 @@ def yamltree2oakbranch(node):
             branch.add_child(yamltree2oakbranch(child))
         return branch
 
-class MetaPage(object):
-    pass
+class MetaPage(LiteralNode):
+    '''
+    String of a page content with metadata: name, path etc. 
+    For convenience, it is subclassed from LiteralNode.
+    '''
+    def __init__(self, name, content, path='', extension='html', encoding='utf-8'):
+        super(MetaPage, self).__init__(name=name)
+        self.set_data(content)
+        self.set_metadata(path=path, extension=extension, encoding=encoding)
+
 
 class OakBranch(ContainerNode):
     '''
@@ -50,7 +58,8 @@ class OakBranch(ContainerNode):
         '''
         data = self.children_as_dictionary()
         data['current_page'] = self
-        return self.get_metadata('templates')['detail'].render(**data)
+        page = MetaPage(self.__name__, self.get_metadata('templates')['detail'].render(**data))
+        return page
 
     def __unicode__(self):
         return self.render_preview()

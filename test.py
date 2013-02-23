@@ -26,8 +26,11 @@ class TestRendering(ut.TestCase):
     def test_get_dictionary(self):
         self.assertDictEqual(self.branch.get_dictionary(), self.data)
 
+    def test_render_detail_returns_metapage(self):
+        self.assertIsInstance(self.branch.render_detail(), module.MetaPage)
+
     def test_render_detail(self):
-        self.assertEqual(self.branch.render_detail(), 'Detail. T=%s. C=%s' % (self.data['title'], self.data['content']))
+        self.assertEqual(self.branch.render_detail().get_data(), 'Detail. T=%s. C=%s' % (self.data['title'], self.data['content']))
         
     def test_render_preview(self):
         self.assertEqual(self.branch.render_preview(), 'Preview. T=%s.' % self.data['title'])
@@ -58,7 +61,7 @@ paper2:
 
     def test_render_root(self):
         branch = module.yamltree2oakbranch(self.node)
-        self.assertEqual(branch.render_detail(), "<ul><li>First paper</li><li>Second paper</li></ul>")
+        self.assertEqual(branch.render_detail().get_data(), "<ul><li>First paper</li><li>Second paper</li></ul>")
 
     def test_paper_preview(self):
         branch = module.yamltree2oakbranch(self.node)
@@ -66,7 +69,7 @@ paper2:
 
     def test_paper_detail(self):
         branch = module.yamltree2oakbranch(self.node)
-        self.assertEqual(branch.paper1.render_detail(), "Detail. T=First paper. C=First content")
+        self.assertEqual(branch.paper1.render_detail().get_data(), "Detail. T=First paper. C=First content")
 
 if __name__=='__main__':
     ut.main()
