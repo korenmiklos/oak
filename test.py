@@ -2,9 +2,11 @@
 import unittest as ut 
 import oak as module
 import os
+from shutil import rmtree
 
 from jinja2 import Template
-from yamltree import LiteralNode, parse_yaml
+from yamltree import LiteralNode, parse_yaml, YAMLTree
+import yaml
 
 class TestRendering(ut.TestCase):
     def setUp(self):
@@ -78,7 +80,51 @@ paper2:
         self.assertEqual(os.path.join(page.get_metadata('path'), 
             page.__name__)+'.'+
             page.get_metadata('extension'),
-            '/root/paper1/index.html')
+            '/paper1/index.html')
+
+class TestNodesForTemplate(ut.TestCase):
+    def setUp(self):
+        os.makedirs('testdata/folder1')
+        os.makedirs('testdata/folder2')
+        doc0 = open('testdata/document.yaml', 'w')
+        doc1 = open('testdata/folder1/document.yaml', 'w')
+        doc2 = open('testdata/folder2/document.yaml', 'w')
+        data = dict(title='Test document', content='Test data')
+        
+        for stream in [doc0, doc1, doc2]:
+            yaml.dump(data, stream)
+            stream.close()
+
+        self.node = YAMLTree('testdata')
+
+    def tearDown(self):
+        rmtree('testdata')
+
+    def test_index_html(self):
+        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/index.html').values()[0], self.node.folder1)
+
+    def test_two_deep(self):
+        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/document/index.html').values()[0], self.node.folder1.document)
+
+    def test_reverse_url(self):
+        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/document/index.html').values()[0].get_absolute_url(), '/folder1/document')
+
+    def test_paper1_html(self):
+        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1.html').values()[0], self.node.folder1)
+
+    def test_unknown_html(self):
+        self.assertEqual(module.get_nodes_for_template(self.node, '/paper3.html').values()[0], self.node)
+
+    def test_children(self):
+        nodes = {'/folder2/index.html': self.node.get_by_url('/folder2'),
+            '/folder1/index.html': self.node.get_by_url('/folder1'),
+            '/document/index.html': self.node.get_by_url('/document'),
+            }
+        self.assertDictEqual(module.get_nodes_for_template(self.node, '/_children/index.html'), nodes)
+
+    def test_children_html(self):
+        nodes = {'/folder1/document.html': self.node.get_by_url('/folder1/document')}
+        self.assertDictEqual(module.get_nodes_for_template(self.node, '/folder1/_children.html'), nodes)
 
 if __name__=='__main__':
     ut.main()

@@ -10,9 +10,47 @@ __author__ = "Miklós Koren <miklos.koren@gmail.com>"
 __version__ = "0.1.0"
 
 import re
+import os.path
 from yamltree import ContainerNode, LiteralNode
-from jinja2 import Template
+from jinja2 import FileSystemLoader, Template
+from jinja2.environment import Environment
 
+def mock():
+    env = Environment()
+    env.loader = FileSystemLoader('.')
+    tmpl = env.get_template('page.html')
+    print tmpl.render(parser.vars)
+
+def get_nodes_for_template(root, name):
+    '''
+    Given a template name, return a dictionary of fitting data nodes. 
+    '''
+    head, tail = os.path.split(name)
+    forehead, neck = os.path.split(head)
+    base, ext = os.path.splitext(tail)
+    if (neck=='_children') or (base=='_children'):
+        # look for children template
+        parts = name.split('_children')
+        if len(parts)>1:
+            # parent node
+            parent = root.get_by_url(parts[0])
+            dct = {}
+            for child in parent:
+                dct[parts[0]+child.__name__+parts[1]] = child
+            return dct
+    else:
+        try:
+            # first find data based on full template name without extension
+            return dict(name=root.get_by_url(os.path.join(head,base)))
+        except LookupError :
+            try:
+                # then find data based on template path alone
+                return dict(name=root.get_by_url(head))
+            except LookupError:
+                return dict(name=root)
+
+def render_to_metapage(node, template):
+    pass
 
 def yamltree2oakbranch(node):
     if isinstance(node, LiteralNode):
