@@ -16,10 +16,6 @@ from yamltree import ContainerNode, LiteralNode, YAMLTree
 from jinja2 import FileSystemLoader, Template
 from jinja2.environment import Environment
 
-def mock():
-    tmpl = env.get_template('page.html')
-    print tmpl.render(parser.vars)
-
 def get_nodes_for_template(root, name):
     '''
     Given a template name, return a dictionary of fitting data nodes. 
@@ -68,23 +64,6 @@ def render_all_pages(env, root):
     for name in env.list_templates():
         pages.extend(render_to_metapage(env, name, root))
     return pages
-
-def yamltree2oakbranch(node):
-    if isinstance(node, LiteralNode):
-        # literal is not branch, stop recursion
-        # make a shallow copy so as to not violate single parent restriction
-        newnode = LiteralNode(node.__name__)
-        newnode.set_data(node.get_data())
-        return newnode
-    elif isinstance(node, ContainerNode):
-        templates = {}
-        for (key, value) in node.__meta__['templates'].items():
-            templates[key] = Template(value)
-        branch = OakBranch(templates, node.__name__)
-        for child in node:
-            # convert all children to branches
-            branch.add_child(yamltree2oakbranch(child))
-        return branch
 
 class MetaPage(object):
     '''
@@ -142,44 +121,4 @@ class OakSite(object):
         shutil.rmtree(self.output)
         os.makedirs(self.output)
 
-
-class OakBranch(ContainerNode):
-    '''
-    A subtree of webpages.
-    '''
-    def __init__(self, templates, *args):
-        super(OakBranch, self).__init__(*args)
-        self.set_metadata(templates=templates)
-
-    def render_preview(self):
-        return self.get_metadata('templates')['preview'].render(**self.get_dictionary())
-
-    def render_detail(self):
-        '''
-        Render the page. `current_page` is a YAMLTree node corresponding to this page. 
-        Children of the node are also made available directly as local variables, so that
-        `current_page.title` and `title` mean exactly the same.
-        '''
-        data = self.children_as_dictionary()
-        data['current_page'] = self
-        page = MetaPage('index.html', 
-            self.get_metadata('templates')['detail'].render(**data),
-            path=self.get_absolute_url())
-        return page
-
-    def __unicode__(self):
-        return self.render_preview()
-
-    def __str__(self):
-        return self.__unicode__()
-
-if __name__=='__main__':
-    env = Environment()
-    env.loader = FileSystemLoader('site/templates')
-    root = YAMLTree('site/content')
-
-    pages = render_all_pages(env, root)
-    for page in pages:
-        print os.path.join(page.get_metadata('path'), page.__name__)+page.get_metadata('extension')
-        print page
 
