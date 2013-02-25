@@ -41,6 +41,27 @@ class TestRendering(ut.TestCase):
     def test_str(self):
         self.assertEqual(self.branch.render_preview(), str(self.branch))
         
+class TestMetaPage(ut.TestCase):
+    def setUp(self):
+        os.makedirs('testdata')
+
+    def test_save_path(self):
+        page = module.MetaPage('index.html', 'string', 'testdata/folder')
+        page.save()
+        self.failUnless(os.path.isfile('testdata/folder/index.html'))
+
+    def test_save_content(self):
+        page = module.MetaPage('index.html', 'String', 'testdata/folder')
+        page.save()
+        self.assertEqual(open('testdata/folder/index.html', 'r').read(), 'String')
+
+    def test_save_encoding(self):
+        page = module.MetaPage('index.html', u'árvíztűrő tükörfúrógép', 'testdata/folder', encoding='utf-8')
+        page.save()
+        self.assertEqual(open('testdata/folder/index.html', 'r').read().decode('utf-8'), u'árvíztűrő tükörfúrógép')
+
+    def tearDown(self):
+        rmtree('testdata')
 
 
 class TestConversion(ut.TestCase):

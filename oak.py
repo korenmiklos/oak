@@ -98,6 +98,17 @@ class MetaPage(object):
     def get_data(self):
         return self.content
 
+    def save(self, root='.'):
+        '''
+        Write out page to file system.
+        '''
+        fullpath = os.path.join(root, self.path)
+        if not os.path.isdir(fullpath):
+            os.makedirs(fullpath)
+        output = open(os.path.join(fullpath, self.name), 'w')
+        output.write(self.content.encode(self.encoding))
+        output.close()
+
 
 class OakBranch(ContainerNode):
     '''
