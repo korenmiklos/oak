@@ -110,6 +110,8 @@ class OakSite(object):
         '''
         Render and save all pages.
         '''
+        # clean folders first
+        self.clean()
         pages = render_all_pages(self.environment, self.data)
         for page in pages:
             page.save(self.output)
@@ -121,4 +123,15 @@ class OakSite(object):
         shutil.rmtree(self.output)
         os.makedirs(self.output)
 
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('root', help='Root folder of the site')
+    parser.add_argument('-c', '--content', help='Path of content folder. Default is root/content')
+    parser.add_argument('-o', '--output', help='Path of output folder. Default is root/output')
+    parser.add_argument('-t', '--templates', help='Path of template folder. Default is root/templates')
+    args = parser.parse_args()
 
+    site = OakSite(args.root, content=args.content, templates=args.templates, output=args.output)
+    print 'Generating site...'
+    site.generate()
