@@ -77,9 +77,7 @@ paper2:
     def test_paper_detail_url(self):
         branch = module.yamltree2oakbranch(self.node)
         page = branch.paper1.render_detail()
-        self.assertEqual(os.path.join(page.get_metadata('path'), 
-            page.__name__)+'.'+
-            page.get_metadata('extension'),
+        self.assertEqual(os.path.join(page.path, page.name),
             '/paper1/index.html')
 
 class TestNodesForTemplate(ut.TestCase):
@@ -113,7 +111,7 @@ class TestNodesForTemplate(ut.TestCase):
         self.assertEqual(module.get_nodes_for_template(self.node, '/folder1.html').values()[0], self.node.folder1)
 
     def test_unknown_html(self):
-        self.assertEqual(module.get_nodes_for_template(self.node, '/paper3.html').values()[0], self.node)
+        self.assertDictEqual(module.get_nodes_for_template(self.node, '/paper3.html'), {'/paper3.html': self.node})
 
     def test_children(self):
         nodes = {'/folder2/index.html': self.node.get_by_url('/folder2'),

@@ -11,13 +11,11 @@ __version__ = "0.1.0"
 
 import re
 import os.path
-from yamltree import ContainerNode, LiteralNode
+from yamltree import ContainerNode, LiteralNode, YAMLTree
 from jinja2 import FileSystemLoader, Template
 from jinja2.environment import Environment
 
 def mock():
-    env = Environment()
-    env.loader = FileSystemLoader('.')
     tmpl = env.get_template('page.html')
     print tmpl.render(parser.vars)
 
@@ -41,16 +39,34 @@ def get_nodes_for_template(root, name):
     else:
         try:
             # first find data based on full template name without extension
-            return dict(name=root.get_by_url(os.path.join(head,base)))
+            return {name: root.get_by_url(os.path.join(head,base))}
         except LookupError :
             try:
                 # then find data based on template path alone
-                return dict(name=root.get_by_url(head))
+                return {name: root.get_by_url(head)}
             except LookupError:
-                return dict(name=root)
+                return {name: root}
 
-def render_to_metapage(node, template):
-    pass
+def render_to_metapage(env, name, root):
+    template = env.get_template(name)
+    nodes = get_nodes_for_template(root, name)
+    pages = []
+    for filename, node in nodes.iteritems():
+        # get parts of filename
+        path, fname = os.path.split(filename)
+        # fill template with data
+        data = node.children_as_dictionary()
+        data['current_page'] = node
+        if root is not None:
+            data['site_root'] = root
+        pages.append(MetaPage(fname, template.render(**data), path=path))
+    return pages
+
+def render_all_pages(env, root):
+    pages = []
+    for name in env.list_templates():
+        pages.extend(render_to_metapage(env, name, root))
+    return pages
 
 def yamltree2oakbranch(node):
     if isinstance(node, LiteralNode):
@@ -69,15 +85,18 @@ def yamltree2oakbranch(node):
             branch.add_child(yamltree2oakbranch(child))
         return branch
 
-class MetaPage(LiteralNode):
+class MetaPage(object):
     '''
-    String of a page content with metadata: name, path etc. 
-    For convenience, it is subclassed from LiteralNode.
+    Unicode string of a page content with metadata: name, path etc. 
     '''
-    def __init__(self, name, content, path='', extension='html', encoding='utf-8'):
-        super(MetaPage, self).__init__(name=name)
-        self.set_data(content)
-        self.set_metadata(path=path, extension=extension, encoding=encoding)
+    def __init__(self, name, content, path='', encoding='utf-8'):
+        self.path = path
+        self.name = name
+        self.content = unicode(content)
+        self.encoding = encoding
+
+    def get_data(self):
+        return self.content
 
 
 class OakBranch(ContainerNode):
@@ -99,10 +118,9 @@ class OakBranch(ContainerNode):
         '''
         data = self.children_as_dictionary()
         data['current_page'] = self
-        page = MetaPage('index', 
+        page = MetaPage('index.html', 
             self.get_metadata('templates')['detail'].render(**data),
-            path=self.get_absolute_url(),
-            extension='html')
+            path=self.get_absolute_url())
         return page
 
     def __unicode__(self):
@@ -110,3 +128,14 @@ class OakBranch(ContainerNode):
 
     def __str__(self):
         return self.__unicode__()
+
+if __name__=='__main__':
+    env = Environment()
+    env.loader = FileSystemLoader('site/templates')
+    root = YAMLTree('site/content')
+
+    pages = render_all_pages(env, root)
+    for page in pages:
+        print os.path.join(page.get_metadata('path'), page.__name__)+page.get_metadata('extension')
+        print page
+
