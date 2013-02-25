@@ -4,7 +4,7 @@ import oak as module
 import os
 from shutil import rmtree
 
-from jinja2 import Template
+from jinja2 import Template, Environment, DictLoader
 from yamltree import LiteralNode, parse_yaml, YAMLTree
 import yaml
 
@@ -68,6 +68,88 @@ class TestMetaPage(ut.TestCase):
     def tearDown(self):
         rmtree('testdata')
 
+class TestRenderToMetaPage(ut.TestCase):
+    def setUp(self):
+        try:
+            rmtree('testdata')
+        except:
+            pass
+        self.env = Environment()
+        self.env.loader = DictLoader({'parent/child/index.html': 
+            'Root={{site_root.__name__}}. Page={{current_page.__name__}}'})
+        os.makedirs('testdata/parent')
+        doc0 = open('testdata/parent/child.yaml', 'w')
+        data = dict(title='Test document', content='Test data')
+        
+        for stream in [doc0]:
+            yaml.dump(data, stream)
+            stream.close()
+
+        self.data = YAMLTree('testdata')
+
+    def tearDown(self):
+        rmtree('testdata')
+
+    def test_render_name(self):
+        page = module.render_to_metapage(self.env, 'parent/child/index.html', self.data)
+        self.assertEqual(page[0].name, 'index.html')
+
+    def test_render_path(self):
+        page = module.render_to_metapage(self.env, 'parent/child/index.html', self.data)
+        self.assertEqual(page[0].path, 'parent/child')
+
+    def test_render_content(self):
+        page = module.render_to_metapage(self.env, 'parent/child/index.html', self.data)
+        self.assertEqual(page[0].get_data(), 'Root=root. Page=child')
+
+class TestOakSite(ut.TestCase):
+    def setUp(self):
+        try:
+            rmtree('testdata')
+        except:
+            pass
+        # data
+        os.makedirs('testdata/content/folder1')
+        os.makedirs('testdata/content/folder2')
+        doc0 = open('testdata/content/document.yaml', 'w')
+        doc1 = open('testdata/content/folder1/document.yaml', 'w')
+        doc2 = open('testdata/content/folder2/document.yaml', 'w')
+        data = dict(title='Test document', content='Test data')
+        
+        for stream in [doc0, doc1, doc2]:
+            yaml.dump(data, stream)
+            stream.close()
+
+        # templates
+        os.makedirs('testdata/templates/folder1')
+        os.makedirs('testdata/templates/folder2')
+        doc0 = open('testdata/templates/document.html', 'w')
+        doc1 = open('testdata/templates/folder1/document.html', 'w')
+        doc2 = open('testdata/templates/folder2/document.html', 'w')
+        
+        for stream in [doc0, doc1, doc2]:
+            stream.write('{{title}}')
+            stream.close()
+
+    def tearDown(self):
+        rmtree('testdata')
+
+    def test_default_site(self):
+        site = module.OakSite(root='testdata')
+        site.generate()
+        for page in ['testdata/output/document.html',
+                     'testdata/output/folder1/document.html',
+                     'testdata/output/folder2/document.html']:
+            self.failUnless(os.path.isfile(page))
+
+    def test_site_content(self):
+        site = module.OakSite(root='testdata')
+        site.generate()
+        for page in ['testdata/output/document.html',
+                     'testdata/output/folder1/document.html',
+                     'testdata/output/folder2/document.html']:
+            self.assertEqual(open(page, 'r').read(), 'Test document')
+
 
 class TestConversion(ut.TestCase):
     def setUp(self):
@@ -123,6 +205,9 @@ class TestNodesForTemplate(ut.TestCase):
 
     def tearDown(self):
         rmtree('testdata')
+
+    def test_no_leading_slash(self):
+        self.assertEqual(module.get_nodes_for_template(self.node, 'folder1/index.html').values()[0], self.node.folder1)
 
     def test_index_html(self):
         self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/index.html').values()[0], self.node.folder1)

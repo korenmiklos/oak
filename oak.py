@@ -11,6 +11,7 @@ __version__ = "0.1.0"
 
 import re
 import os.path
+import shutil
 from yamltree import ContainerNode, LiteralNode, YAMLTree
 from jinja2 import FileSystemLoader, Template
 from jinja2.environment import Environment
@@ -108,6 +109,38 @@ class MetaPage(object):
         output = open(os.path.join(fullpath, self.name), 'w')
         output.write(self.content.encode(self.encoding))
         output.close()
+
+class OakSite(object):
+    '''
+    An Oak website.
+    '''
+    def __init__(self, root='.', templates=None, content=None, output=None):
+        if templates is None:
+            templates = os.path.join(root, 'templates')
+        if content is None:
+            content = os.path.join(root, 'content')
+        if output is None:
+            output = os.path.join(root, 'output')
+
+        self.environment = Environment()
+        self.environment.loader = FileSystemLoader(templates)
+        self.data = YAMLTree(content)
+        self.output = output
+
+    def generate(self):
+        '''
+        Render and save all pages.
+        '''
+        pages = render_all_pages(self.environment, self.data)
+        for page in pages:
+            page.save(self.output)
+
+    def clean(self):
+        '''
+        Remove all files in output foled.
+        '''
+        shutil.rmtree(self.output)
+        os.makedirs(self.output)
 
 
 class OakBranch(ContainerNode):
