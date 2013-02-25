@@ -50,6 +50,11 @@ class TestMetaPage(ut.TestCase):
         page.save()
         self.failUnless(os.path.isfile('testdata/folder/index.html'))
 
+    def test_save_relative_path(self):
+        page = module.MetaPage('index.html', 'string', 'folder')
+        page.save(root='testdata')
+        self.failUnless(os.path.isfile('testdata/folder/index.html'))
+
     def test_save_content(self):
         page = module.MetaPage('index.html', 'String', 'testdata/folder')
         page.save()
