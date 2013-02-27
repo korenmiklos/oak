@@ -102,6 +102,12 @@ class TestOakSite(ut.TestCase):
     def tearDown(self):
         rmtree('testdata')
 
+    def test_excluded_template(self):
+        site = module.OakSite(root='testdata', excluded_templates='folder2/.*')
+        site.generate()
+        for page in ['testdata/output/folder2/document.html']:
+            self.failIf(os.path.isfile(page))
+
     def test_default_site(self):
         site = module.OakSite(root='testdata')
         site.generate()

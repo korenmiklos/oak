@@ -62,10 +62,12 @@ def render_to_metapage(env, name, root):
         pages.append(MetaPage(fname, template.render(**data), path=path))
     return pages
 
-def render_all_pages(env, root):
+def render_all_pages(env, root, exclude=[]):
     pages = []
     for name in env.list_templates():
-        pages.extend(render_to_metapage(env, name, root))
+        if not any([pattern.match(name) for pattern in exclude]):
+            print 'Rendering %s' % name
+            pages.extend(render_to_metapage(env, name, root))
     return pages
 
 class MetaPage(object):
@@ -96,18 +98,21 @@ class OakSite(object):
     '''
     An Oak website.
     '''
-    def __init__(self, root='.', templates=None, content=None, output=None):
+    def __init__(self, root='.', templates=None, content=None, output=None, excluded_templates=[]):
         if templates is None:
             templates = os.path.join(root, 'templates')
         if content is None:
             content = os.path.join(root, 'content')
         if output is None:
             output = os.path.join(root, 'output')
+        if isinstance(excluded_templates, basestring):
+            excluded_templates = [excluded_templates]
 
         self.environment = Environment()
         self.environment.loader = FileSystemLoader(templates)
         self.data = YAMLTree(content)
         self.output = output
+        self.excluded_templates = [re.compile(pattern) for pattern in excluded_templates]
 
     def generate(self):
         '''
@@ -115,7 +120,7 @@ class OakSite(object):
         '''
         # clean folders first
         # self.clean()
-        pages = render_all_pages(self.environment, self.data)
+        pages = render_all_pages(self.environment, self.data, self.excluded_templates)
         for page in pages:
             page.save(self.output)
 
