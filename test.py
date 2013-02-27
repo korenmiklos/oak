@@ -43,12 +43,13 @@ class TestRenderToMetaPage(ut.TestCase):
             pass
         self.env = Environment()
         self.env.loader = DictLoader({'parent/child/index.html': 
-            'Root={{site_root.__name__}}. Page={{current_page.__name__}}'})
+            'Root={{site_root.__name__}}. Meta={{META.TITLE}}. Page={{current_page.__name__}}'})
         os.makedirs('testdata/parent')
-        doc0 = open('testdata/parent/child.yaml', 'w')
+        doc0 = open('testdata/meta.yaml', 'w')
+        doc1 = open('testdata/parent/child.yaml', 'w')
         data = dict(title='Test document', content='Test data')
         
-        for stream in [doc0]:
+        for stream in [doc0, doc1]:
             yaml.dump(data, stream)
             stream.close()
 
@@ -67,7 +68,7 @@ class TestRenderToMetaPage(ut.TestCase):
 
     def test_render_content(self):
         page = module.render_to_metapage(self.env, 'parent/child/index.html', self.data)
-        self.assertEqual(page[0].get_data(), 'Root=root. Page=child')
+        self.assertEqual(page[0].get_data(), 'Root=root. Meta=Test document. Page=child')
 
 class TestOakSite(ut.TestCase):
     def setUp(self):

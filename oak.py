@@ -56,6 +56,9 @@ def render_to_metapage(env, name, root):
         data['current_page'] = node
         if root is not None:
             data['site_root'] = root
+            # also add root variables with UPPERCASE
+            for variable in root:
+                data[variable.__name__.upper()] = variable
         pages.append(MetaPage(fname, template.render(**data), path=path))
     return pages
 
@@ -111,7 +114,7 @@ class OakSite(object):
         Render and save all pages.
         '''
         # clean folders first
-        self.clean()
+        # self.clean()
         pages = render_all_pages(self.environment, self.data)
         for page in pages:
             page.save(self.output)
