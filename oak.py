@@ -18,6 +18,15 @@ from jinja2.environment import Environment
 
 from docutils.core import publish_parts
 
+def limit_filter(iterable, max=10):
+    lst = []
+    for item in iterable:
+        if len(lst)<max:
+            lst.append(item)
+        else:
+            break
+    return lst
+
 def rst_filter(text):
     if isinstance(text, basestring):
         data = text
@@ -107,7 +116,8 @@ class OakSite(object):
     '''
     An Oak website.
     '''
-    def __init__(self, root='.', templates=None, content=None, output=None, excluded_templates=[]):
+    def __init__(self, root='.', templates=None, content=None, output=None, 
+        excluded_templates=[], primary_keys=[]):
         if templates is None:
             templates = os.path.join(root, 'templates')
         if content is None:
@@ -119,8 +129,9 @@ class OakSite(object):
 
         self.environment = Environment()
         self.environment.filters['rst'] = rst_filter
+        self.environment.filters['limit'] = limit_filter
         self.environment.loader = FileSystemLoader(templates)
-        self.data = YAMLTree(content)
+        self.data = YAMLTree(content, primary_keys=primary_keys)
         self.output = output
         self.excluded_templates = [re.compile(pattern) for pattern in excluded_templates]
 
@@ -149,13 +160,17 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', help='Path of output folder. Default is root/output')
     parser.add_argument('-t', '--templates', help='Path of template folder. Default is root/templates')
     parser.add_argument('-x', '--exclude', help='A regular expression for templates to exlude from rendering.')
+    parser.add_argument('-p', '--primarykey', help='A field holding primary keys for list items. Default is id#.')
     args = parser.parse_args()
 
     if args.exclude is None:
         args.exclude = []
+    if args.primarykey is None:
+        args.primarykey = []
 
     site = OakSite(args.root, content=args.content, 
         templates=args.templates, output=args.output, 
-        excluded_templates=args.exclude)
+        excluded_templates=args.exclude,
+        primary_keys=args.primarykey)
     print 'Generating site...'
     site.generate()

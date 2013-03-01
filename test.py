@@ -9,6 +9,9 @@ from yamltree import LiteralNode, parse_yaml, YAMLTree
 import yaml
 
 class TestFilters(ut.TestCase):
+    def test_limit(self):
+        self.assertListEqual(module.limit_filter([1, 2, 3, 4, 5], 2), [1, 2])
+
     def test_rst(self):
         self.assertEqual(module.rst_filter('*strong*'), '<em>strong</em>')
 
