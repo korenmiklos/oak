@@ -8,6 +8,10 @@ from jinja2 import Template, Environment, DictLoader
 from yamltree import LiteralNode, parse_yaml, YAMLTree
 import yaml
 
+class TestFilters(ut.TestCase):
+    def test_rst(self):
+        self.assertEqual(module.rst_filter('*strong*'), '<em>strong</em>')
+
 class TestMetaPage(ut.TestCase):
     def setUp(self):
         os.makedirs('testdata')

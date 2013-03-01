@@ -13,8 +13,17 @@ import re
 import os.path
 import shutil
 from yamltree import ContainerNode, LiteralNode, YAMLTree
-from jinja2 import FileSystemLoader, Template
+from jinja2 import FileSystemLoader, Template, Markup
 from jinja2.environment import Environment
+
+from docutils.core import publish_parts
+
+def rst_filter(text):
+    if isinstance(text, basestring):
+        data = text
+    elif isinstance(text, LiteralNode):
+        data = text.get_data()
+    return publish_parts(source=data, writer_name='html')['body']
 
 def get_nodes_for_template(root, name):
     '''
@@ -109,6 +118,7 @@ class OakSite(object):
             excluded_templates = [excluded_templates]
 
         self.environment = Environment()
+        self.environment.filters['rst'] = rst_filter
         self.environment.loader = FileSystemLoader(templates)
         self.data = YAMLTree(content)
         self.output = output
@@ -138,8 +148,14 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--content', help='Path of content folder. Default is root/content')
     parser.add_argument('-o', '--output', help='Path of output folder. Default is root/output')
     parser.add_argument('-t', '--templates', help='Path of template folder. Default is root/templates')
+    parser.add_argument('-x', '--exclude', help='A regular expression for templates to exlude from rendering.')
     args = parser.parse_args()
 
-    site = OakSite(args.root, content=args.content, templates=args.templates, output=args.output)
+    if args.exclude is None:
+        args.exclude = []
+
+    site = OakSite(args.root, content=args.content, 
+        templates=args.templates, output=args.output, 
+        excluded_templates=args.exclude)
     print 'Generating site...'
     site.generate()
