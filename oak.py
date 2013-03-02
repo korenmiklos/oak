@@ -49,7 +49,9 @@ def get_nodes_for_template(root, name):
             parent = root.get_by_url(parts[0])
             dct = {}
             for child in parent:
-                dct[parts[0]+child.__name__+parts[1]] = child
+                child_name = parts[0]+child.__name__+"_children".join(parts[1:])
+                # check for grandchildren
+                dct.update(get_nodes_for_template(root, child_name))
             return dct
     else:
         try:

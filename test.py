@@ -175,6 +175,14 @@ class TestNodesForTemplate(ut.TestCase):
             }
         self.assertDictEqual(module.get_nodes_for_template(self.node, '/_children/index.html'), nodes)
 
+    def test_grand_children(self):
+        nodes = {'/folder2/document.html': self.node.get_by_url('/folder2/document'),
+            '/folder1/document.html': self.node.get_by_url('/folder1/document'),
+            '/document/title.html': self.node.get_by_url('/document/title'),
+            '/document/content.html': self.node.get_by_url('/document/content'),
+            }
+        self.assertDictEqual(module.get_nodes_for_template(self.node, '/_children/_children.html'), nodes)
+
     def test_children_html(self):
         nodes = {'/folder1/document.html': self.node.get_by_url('/folder1/document')}
         self.assertDictEqual(module.get_nodes_for_template(self.node, '/folder1/_children.html'), nodes)
