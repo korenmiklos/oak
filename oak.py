@@ -7,12 +7,12 @@
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 import re
 import os.path
 import shutil
-from yamltree import ContainerNode, LiteralNode, YAMLTree
+from datatree import ContainerNode, LiteralNode, DataTree
 from jinja2 import FileSystemLoader, Template, Markup
 from jinja2.environment import Environment
 
@@ -34,7 +34,7 @@ def rst_filter(text):
         data = text.get_data()
     return publish_parts(source=data, writer_name='html')['body']
 
-def get_nodes_for_template(root, name):
+def get_nodes_for_template(tree, name):
     '''
     Given a template name, return a dictionary of fitting data nodes. 
     '''
@@ -46,27 +46,27 @@ def get_nodes_for_template(root, name):
         parts = name.split('_children')
         if len(parts)>1:
             # parent node
-            parent = root.get_by_url(parts[0])
+            parent = tree.get_by_url(parts[0])
             dct = {}
             for child in parent:
                 child_name = parts[0]+child.__name__+"_children".join(parts[1:])
                 # check for grandchildren
-                dct.update(get_nodes_for_template(root, child_name))
+                dct.update(get_nodes_for_template(tree, child_name))
             return dct
     else:
         try:
             # first find data based on full template name without extension
-            return {name: root.get_by_url(os.path.join(head,base))}
+            return {name: tree.get_by_url(os.path.join(head,base))}
         except LookupError :
             try:
                 # then find data based on template path alone
-                return {name: root.get_by_url(head)}
+                return {name: tree.get_by_url(head)}
             except LookupError:
-                return {name: root}
+                return {name: tree.root}
 
-def render_to_metapage(env, name, root):
+def render_to_metapage(env, name, tree):
     template = env.get_template(name)
-    nodes = get_nodes_for_template(root, name)
+    nodes = get_nodes_for_template(tree, name)
     pages = []
     for filename, node in nodes.iteritems():
         # get parts of filename
@@ -74,20 +74,20 @@ def render_to_metapage(env, name, root):
         # fill template with data
         data = node.children_as_dictionary()
         data['current_page'] = node
-        if root is not None:
-            data['site_root'] = root
+        if tree.root is not None:
+            data['site_root'] = tree.root
             # also add root variables with UPPERCASE
-            for variable in root:
+            for variable in tree.root:
                 data[variable.__name__.upper()] = variable
         pages.append(MetaPage(fname, template.render(**data), path=path))
     return pages
 
-def render_all_pages(env, root, exclude=[]):
+def render_all_pages(env, tree, exclude=[]):
     pages = []
     for name in env.list_templates():
         if not any([pattern.match(name) for pattern in exclude]):
             print 'Rendering %s' % name
-            pages.extend(render_to_metapage(env, name, root))
+            pages.extend(render_to_metapage(env, name, tree))
     return pages
 
 class MetaPage(object):
@@ -133,7 +133,7 @@ class OakSite(object):
         self.environment.filters['rst'] = rst_filter
         self.environment.filters['limit'] = limit_filter
         self.environment.loader = FileSystemLoader(templates)
-        self.data = YAMLTree(content, primary_keys=primary_keys)
+        self.datatree = DataTree(content, primary_keys=primary_keys)
         self.output = output
         self.excluded_templates = [re.compile(pattern) for pattern in excluded_templates]
 
@@ -143,7 +143,7 @@ class OakSite(object):
         '''
         # clean folders first
         # self.clean()
-        pages = render_all_pages(self.environment, self.data, self.excluded_templates)
+        pages = render_all_pages(self.environment, self.datatree, self.excluded_templates)
         for page in pages:
             page.save(self.output)
 

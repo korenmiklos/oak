@@ -5,7 +5,7 @@ import os
 from shutil import rmtree
 
 from jinja2 import Template, Environment, DictLoader
-from yamltree import LiteralNode, parse_yaml, YAMLTree
+from datatree import LiteralNode, DataTree
 import yaml
 
 class TestFilters(ut.TestCase):
@@ -60,7 +60,7 @@ class TestRenderToMetaPage(ut.TestCase):
             yaml.dump(data, stream)
             stream.close()
 
-        self.data = YAMLTree('testdata')
+        self.data = DataTree('testdata')
 
     def tearDown(self):
         rmtree('testdata')
@@ -75,7 +75,7 @@ class TestRenderToMetaPage(ut.TestCase):
 
     def test_render_content(self):
         page = module.render_to_metapage(self.env, 'parent/child/index.html', self.data)
-        self.assertEqual(page[0].get_data(), 'Root=root. Meta=Test document. Page=child')
+        self.assertEqual(page[0].get_data(), 'Root=testdata. Meta=Test document. Page=child')
 
 class TestOakSite(ut.TestCase):
     def setUp(self):
@@ -145,28 +145,28 @@ class TestNodesForTemplate(ut.TestCase):
             yaml.dump(data, stream)
             stream.close()
 
-        self.node = YAMLTree('testdata')
+        self.node = DataTree('testdata')
 
     def tearDown(self):
         rmtree('testdata')
 
     def test_no_leading_slash(self):
-        self.assertEqual(module.get_nodes_for_template(self.node, 'folder1/index.html').values()[0], self.node.folder1)
+        self.assertEqual(module.get_nodes_for_template(self.node, 'folder1/index.html').values()[0], self.node.root.folder1)
 
     def test_index_html(self):
-        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/index.html').values()[0], self.node.folder1)
+        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/index.html').values()[0], self.node.root.folder1)
 
     def test_two_deep(self):
-        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/document/index.html').values()[0], self.node.folder1.document)
+        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/document/index.html').values()[0], self.node.root.folder1.document)
 
     def test_reverse_url(self):
         self.assertEqual(module.get_nodes_for_template(self.node, '/folder1/document/index.html').values()[0].get_absolute_url(), '/folder1/document')
 
     def test_paper1_html(self):
-        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1.html').values()[0], self.node.folder1)
+        self.assertEqual(module.get_nodes_for_template(self.node, '/folder1.html').values()[0], self.node.root.folder1)
 
     def test_unknown_html(self):
-        self.assertDictEqual(module.get_nodes_for_template(self.node, '/paper3.html'), {'/paper3.html': self.node})
+        self.assertDictEqual(module.get_nodes_for_template(self.node, '/paper3.html'), {'/paper3.html': self.node.root})
 
     def test_children(self):
         nodes = {'/folder2/index.html': self.node.get_by_url('/folder2'),
