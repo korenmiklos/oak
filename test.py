@@ -13,7 +13,7 @@ class TestFilters(ut.TestCase):
         self.assertListEqual(module.limit_filter([1, 2, 3, 4, 5], 2), [1, 2])
 
     def test_rst(self):
-        self.assertEqual(module.rst_filter('*strong*'), '<em>strong</em>')
+        self.assertEqual(module.rst_filter('*strong*'), '<p><em>strong</em></p>\n')
 
 class TestMetaPage(ut.TestCase):
     def setUp(self):

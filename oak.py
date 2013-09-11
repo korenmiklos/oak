@@ -12,6 +12,7 @@ __version__ = "0.2.0"
 import re
 import os.path
 import shutil
+import time
 from datatree import ContainerNode, LiteralNode, DataTree
 from jinja2 import FileSystemLoader, Template, Markup
 from jinja2.environment import Environment
@@ -33,6 +34,12 @@ def rst_filter(text):
     elif isinstance(text, LiteralNode):
         data = text.get_data()
     return publish_parts(source=data, writer_name='html')['body']
+
+def monthyear(value):
+    return time.strftime('%B %Y', time.strptime(value.get_data(), '%Y-%m-%d'))
+
+def datetime(value):
+    return time.strptime(value.get_data(), '%Y-%m-%d')
 
 def get_nodes_for_template(tree, name):
     '''
@@ -132,6 +139,8 @@ class OakSite(object):
         self.environment = Environment()
         self.environment.filters['rst'] = rst_filter
         self.environment.filters['limit'] = limit_filter
+        self.environment.filters['monthyear'] = monthyear
+        self.environment.filters['datetime'] = datetime
         self.environment.loader = FileSystemLoader(templates)
         self.datatree = DataTree(content, primary_keys=primary_keys)
         self.output = output
