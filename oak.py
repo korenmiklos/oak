@@ -28,11 +28,18 @@ def limit_filter(iterable, max=10):
             break
     return lst
 
+def where_filter(iterable, condition):
+    # absolute simples condition parser
+    field, value = condition.split('=')
+    return [item for item in iterable if unicode(item[field.strip()])==unicode(value.strip())]
+
 def rst_filter(text):
     if isinstance(text, basestring):
         data = text
     elif isinstance(text, LiteralNode):
         data = text.get_data()
+    else:
+        data = unicode(text)
     return publish_parts(source=data, writer_name='html')['body']
 
 def monthyear(value):
@@ -139,6 +146,7 @@ class OakSite(object):
         self.environment = Environment()
         self.environment.filters['rst'] = rst_filter
         self.environment.filters['limit'] = limit_filter
+        self.environment.filters['filter'] = where_filter
         self.environment.filters['monthyear'] = monthyear
         self.environment.filters['datetime'] = datetime
         self.environment.loader = FileSystemLoader(templates)

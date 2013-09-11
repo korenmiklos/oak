@@ -15,6 +15,13 @@ class TestFilters(ut.TestCase):
     def test_rst(self):
         self.assertEqual(module.rst_filter('*strong*'), '<p><em>strong</em></p>\n')
 
+    def test_where(self):
+        self.assertListEqual(module.where_filter([
+            dict(a=1,cucc=2),
+            dict(a=2,cucc=1),
+            dict(a=3,cucc=1)], 'cucc=1'), 
+            [dict(a=2,cucc=1),dict(a=3,cucc=1)])
+
 class TestMetaPage(ut.TestCase):
     def setUp(self):
         os.makedirs('testdata')
