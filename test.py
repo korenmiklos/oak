@@ -15,6 +15,10 @@ class TestFilters(ut.TestCase):
     def test_rst(self):
         self.assertEqual(module.rst_filter('*strong*'), '<p><em>strong</em></p>\n')
 
+    def test_number(self):
+        self.assertEqual(module.number_filter('2.266e-02'), '0.02')
+        self.assertEqual(module.number_filter('2.266e-02', format='{:.3f}'), '0.023')
+
     def test_where(self):
         self.assertListEqual(module.where_filter([
             dict(a=1,cucc=2),

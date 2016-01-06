@@ -7,7 +7,7 @@
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 import re
 import os.path
@@ -27,6 +27,9 @@ def limit_filter(iterable, max=10):
         else:
             break
     return lst
+
+def number_filter(text, format="{:.2f}"):
+    return format.format(float(text))
 
 def where_filter(iterable, condition):
     # absolute simples condition parser
