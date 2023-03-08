@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "oak"
+version = "0.1.0"
+description = ""
+authors = ["Miklos Koren <miklos.koren@gmail.com>"]
+license = "MIT"
+readme = "README.markdown"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+Jinja2 = "^3.1.2"
+datatree = {git = "https://github.com/korenmiklos/yamltree.git"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
