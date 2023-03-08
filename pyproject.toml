@@ -10,6 +10,7 @@ readme = "README.markdown"
 python = "^3.11"
 Jinja2 = "^3.1.2"
 datatree = {git = "https://github.com/korenmiklos/yamltree.git"}
+docutils = "^0.19"
 
 
 [build-system]
