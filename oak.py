@@ -9,14 +9,14 @@ from math import exp
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 import re
 import os.path
 import shutil
 import time
 from datatree import ContainerNode, LiteralNode, DataTree
-from jinja2 import FileSystemLoader, Template, Markup
+from jinja2 import FileSystemLoader
 from jinja2.environment import Environment
 
 from docutils.core import publish_parts

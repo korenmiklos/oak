@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "oak"
-version = "0.1.0"
+version = "0.2.5"
 description = ""
 authors = ["Miklos Koren <miklos.koren@gmail.com>"]
 license = "MIT"
