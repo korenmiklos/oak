@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from math import exp
+
 '''
 '''
 
 
 __docformat__ = 'markdown en'
 __author__ = "Miklós Koren <miklos.koren@gmail.com>"
-__version__ = "0.2.1"
+__version__ = "0.2.4"
 
 import re
 import os.path
@@ -19,6 +21,22 @@ from jinja2.environment import Environment
 
 from docutils.core import publish_parts
 
+def author_filter(text):
+    if isinstance(text, str):
+        data = text
+    elif isinstance(text, LiteralNode):
+        data = text.get_data()
+    else:
+        data = text
+    authors = data.split(', ')
+    if len(authors) == 1:
+        authors = data.split(' and ')
+        if len(authors) > 1:
+            authors[1] = ' and ' + authors[1]
+    first_author_names = authors[0].split()
+    authors[0] = '{}, {}'.format(first_author_names[-1], ' '.join(first_author_names[0:-1]))
+    return ', '.join(authors)
+
 def limit_filter(iterable, max=10):
     lst = []
     for item in iterable:
@@ -28,21 +46,59 @@ def limit_filter(iterable, max=10):
             break
     return lst
 
-def number_filter(text, format="{:.2f}"):
-    return format.format(float(text))
+def float_filter(text):
+    if isinstance(text, str):
+        data = float(text)
+    elif isinstance(text, LiteralNode):
+        try:
+            data = float(text.get_data())
+        except:
+            raise ValueError(text.get_absolute_url())
+    else:
+        data = float(text)
+    return data
+
+def number_filter(text, format=None):
+    if isinstance(text, str):
+        data = float(text)
+    elif isinstance(text, LiteralNode):
+        try:
+            data = float(text.get_data())
+        except:
+            raise ValueError(text.get_absolute_url())
+    else:
+        data = float(text)
+    if format is None:
+        # sensible number format choices
+        format = "{:.2f}"
+        if abs(data)<1:
+            format = "{:.3f}"
+        if abs(data)>=100:
+            format = "{:,.0f}"
+    return format.format(data)
+
+def percentage_filter(text, format=None):
+    if isinstance(text, str):
+        data = float(text)
+    elif isinstance(text, LiteralNode):
+        data = float(text.get_data())
+    else:
+        data = float(text)
+    data = exp(data)*100-100
+    return number_filter(data, format)
 
 def where_filter(iterable, condition):
     # absolute simples condition parser
     field, value = condition.split('=')
-    return [item for item in iterable if unicode(item[field.strip()])==unicode(value.strip())]
+    return [item for item in iterable if (item[field.strip()])==(value.strip())]
 
 def rst_filter(text):
-    if isinstance(text, basestring):
+    if isinstance(text, str):
         data = text
     elif isinstance(text, LiteralNode):
         data = text.get_data()
     else:
-        data = unicode(text)
+        data = text
     return publish_parts(source=data, writer_name='html')['body']
 
 def monthyear(value):
@@ -85,7 +141,7 @@ def render_to_metapage(env, name, tree):
     template = env.get_template(name)
     nodes = get_nodes_for_template(tree, name)
     pages = []
-    for filename, node in nodes.iteritems():
+    for filename, node in nodes.items():
         # get parts of filename
         path, fname = os.path.split(filename)
         # fill template with data
@@ -103,7 +159,7 @@ def render_all_pages(env, tree, exclude=[]):
     pages = []
     for name in env.list_templates():
         if not any([pattern.match(name) for pattern in exclude]):
-            print 'Rendering %s' % name
+            print('Rendering %s' % name)
             pages.extend(render_to_metapage(env, name, tree))
     return pages
 
@@ -114,7 +170,7 @@ class MetaPage(object):
     def __init__(self, name, content, path='', encoding='utf-8'):
         self.path = path
         self.name = name
-        self.content = unicode(content)
+        self.content = content
         self.encoding = encoding
 
     def get_data(self):
@@ -128,7 +184,7 @@ class MetaPage(object):
         if not os.path.isdir(fullpath):
             os.makedirs(fullpath)
         output = open(os.path.join(fullpath, self.name), 'w')
-        output.write(self.content.encode(self.encoding))
+        output.write(self.content)
         output.close()
 
 class OakSite(object):
@@ -143,10 +199,13 @@ class OakSite(object):
             content = os.path.join(root, 'content')
         if output is None:
             output = os.path.join(root, 'output')
-        if isinstance(excluded_templates, basestring):
+        if isinstance(excluded_templates, str):
             excluded_templates = [excluded_templates]
 
         self.environment = Environment()
+        self.environment.filters['author'] = author_filter
+        self.environment.filters['number'] = number_filter
+        self.environment.filters['percentage'] = percentage_filter
         self.environment.filters['rst'] = rst_filter
         self.environment.filters['limit'] = limit_filter
         self.environment.filters['filter'] = where_filter
@@ -194,5 +253,5 @@ if __name__ == '__main__':
         templates=args.templates, output=args.output, 
         excluded_templates=args.exclude,
         primary_keys=args.primarykey)
-    print 'Generating site...'
+    print('Generating site...')
     site.generate()
